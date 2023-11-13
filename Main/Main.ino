@@ -8,11 +8,10 @@
 
 //--------------------------------------
 //-----------Motor----------------------
-const int stepsPerRevolution = 512;  // change this to fit the number of steps per revolution
-const int rolePerMinute = 15;         // Adjustable range of 28BYJ-48 stepper is 0~17 rpm
-
+#define SPR 512 // stepsPerRevolution: change this to fit the number of steps per revolution
+#define RPM 15  // rolesPerMinute: Adjustable range of 28BYJ-48 stepper is 0~17 rpm
 // initialize the stepper library on pins 34 through 40:
-Stepper stepper(stepsPerRevolution, 34,  38,36, 40);
+Stepper stepper(SPR, 34, 38, 36, 40);
 
 //--------------------------------------
 //-----------Timer----------------------
@@ -39,6 +38,12 @@ int lastSegment;
 //--------Distance-Measure--------------
 #define DISTANCE_ECHO_PIN 6
 #define DISTANCE_TRIGGER_PIN 7
+
+int timeCounter;
+int volatile lastHeight;
+
+int targetHeight;
+int targetTime;
 
 //--------------------------------------
 //-----------TFT-Display----------------
@@ -116,8 +121,8 @@ struct PiezoTone
   int index;
 };
 
-const int falseSound[] = {};
-const int falseSoundDuration[] = {4};
+const int falseSound[] = {NOTE_C3, NOTE_C2};
+const int falseSoundDuration[] = {4, 4};
 const int falseSoundSize = sizeof(falseSound) / sizeof(falseSound[0]);
 
 auto note_timer = Timer<0x20, millis, PiezoTone>();
@@ -126,6 +131,8 @@ auto note_timer = Timer<0x20, millis, PiezoTone>();
 //-----------Game State-----------------
 int state = 0;
 int counter = 0;
+
+char *previousCenterText = "";
 
 //--------------------------------------
 //----------Rotate Game-----------------
@@ -138,6 +145,8 @@ char volatile currentKeys[] = {0, 0, 0, 0};
 int volatile keyIndex = 0;
 
 bool volatile win = false;
+
+bool volatile isRotateGame = false;
 
 //--------------------------------------
 //-----------Functions------------------
@@ -158,41 +167,93 @@ void setup()
   pinMode(DISTANCE_TRIGGER_PIN, OUTPUT);
   pinMode(DISTANCE_ECHO_PIN, INPUT);
 
-  int value = analogRead(ROTATE_PIN);
-  int currentSegment = value / ROTATE_STEP;
+  randomSeed(analogRead(1));
 
-  do
-  {
-    rotateSegment = random(0, 8);
-  } while (rotateSegment == currentSegment);
+  targetHeight = random(3, 20);
+  targetTime = random(3, 10);
 
   tft.initR(INITR_BLACKTAB); // initialize a ST7735S chip, black tab
-  void drawInit();
+  tft.fillScreen(ST7735_BLACK);
+  tft.setRotation(1);
+  drawInitBeforeBeep();
 
-  delay(200);
   int beep_sound[] = {NOTE_C7};
   int beep_duration[] = {8};
 
-  playSound(beep_sound, beep_duration, 1);
-
-  tft.setRotation(1);
-
-  stepper.setSpeed(rolePerMinute);
+  stepper.setSpeed(RPM);
   closeVault();
 
-  delay(200);
+  playSound(beep_sound, beep_duration, 1);
+
+  drawInitAfterBeep();
 
   timer.every(50, keyListener);
-  // timer.every(200, mainLoop);
-  timer.every(200, rotateLoop);
-
+  timer.every(200, mainLoop);
+  // timer.every(200, rotateLoop);
 }
 
-void drawInit() {
+void drawInitBeforeBeep()
+{
+  int initBeforeBeepTime = 1000;
+  int rings = 8;
+  // Draws a circular loading screen going in circles
   tft.fillScreen(ST7735_BLACK);
-  drawTextCentered("Hello World", ST7735_WHITE,12,3);
-  drawTextCentered("You win!", ST7735_WHITE, 9,2);
-  //drawText("Hello World", ST7735_WHITE);
+  tft.drawCircle(80, 64, 60, ST7735_WHITE);
+  tft.drawCircle(80, 64, 59, ST7735_WHITE);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 50, ST7735_MAGENTA);
+  tft.drawCircle(80, 64, 49, ST7735_MAGENTA);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 40, ST7735_BLUE);
+  tft.drawCircle(80, 64, 39, ST7735_BLUE);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 30, ST7735_CYAN);
+  tft.drawCircle(80, 64, 29, ST7735_CYAN);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 20, ST7735_GREEN);
+  tft.drawCircle(80, 64, 19, ST7735_GREEN);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 10, ST7735_YELLOW);
+  tft.drawCircle(80, 64, 9, ST7735_YELLOW);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 5, ST7735_ORANGE);
+  tft.drawCircle(80, 64, 4, ST7735_ORANGE);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 3, ST7735_RED);
+  tft.drawCircle(80, 64, 2, ST7735_RED);
+  delay(initBeforeBeepTime / rings);
+}
+
+void drawInitAfterBeep()
+{
+  int initBeforeBeepTime = 1000;
+  int rings = 8;
+  tft.drawCircle(80, 64, 60, ST7735_BLACK);
+  tft.drawCircle(80, 64, 59, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 50, ST7735_BLACK);
+  tft.drawCircle(80, 64, 49, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 40, ST7735_BLACK);
+  tft.drawCircle(80, 64, 39, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 30, ST7735_BLACK);
+  tft.drawCircle(80, 64, 29, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 20, ST7735_BLACK);
+  tft.drawCircle(80, 64, 19, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 10, ST7735_BLACK);
+  tft.drawCircle(80, 64, 9, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 5, ST7735_BLACK);
+  tft.drawCircle(80, 64, 4, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.drawCircle(80, 64, 3, ST7735_BLACK);
+  tft.drawCircle(80, 64, 2, ST7735_BLACK);
+  delay(initBeforeBeepTime / rings);
+  tft.fillScreen(ST7735_BLACK);
+  drawTextCentered("Vault locked", ST7735_WHITE, 2);
 }
 
 //--------------------------------------
@@ -200,15 +261,17 @@ void drawInit() {
 
 bool mainLoop(void *)
 {
-  // getDistance();
-  // getRotate();
-  // getTouch();
 
   Serial.println("mainLoop");
+  if (counter == 0)
+  {
+  }
   counter++;
+
   if (counter == 10)
   {
     timer.every(200, distanceLoop);
+    tft_timer.every(2000, tftDistanceLoop);
     return false;
   }
 
@@ -219,14 +282,108 @@ bool mainLoop(void *)
 
 bool distanceLoop(void *)
 {
-  Serial.println("distanceLoop");
-  getDistance();
+  int value = getDistance();
+
+  Serial.println(value);
+
+  if (value >= targetHeight - 1 && value <= targetHeight + 1)
+  {
+    timeCounter++;
+    if (timeCounter == targetTime)
+    {
+      tft_timer.cancel();
+      tft_timer.every(2000, tftTouchLoop);
+      timer.every(200, touchLoop);
+      playSoundTimer(melody, noteDurations, melody_size);
+      return false;
+    }
+  }
+  else
+  {
+    timeCounter = 0;
+  }
+
+  lastHeight = value;
+
   return true;
+}
+
+bool tftDistanceLoop(void *)
+{
+
+  char *text = "000 cm";
+  if (lastHeight < 10)
+  {
+    text[0] = '0';
+    text[1] = '0';
+    text[2] = '0' + lastHeight;
+  }
+  else if (lastHeight < 100)
+  {
+    text[0] = '0';
+    text[1] = '0' + lastHeight / 10;
+    text[2] = '0' + lastHeight % 10;
+  }
+  else
+  {
+    text[0] = '0' + lastHeight / 100;
+    text[1] = '0' + (lastHeight % 100) / 10;
+    text[2] = '0' + lastHeight % 10;
+  }
+  tft.fillScreen(ST7735_BLACK);
+  drawTextCentered(text, ST7735_WHITE, 2);
+
+  char *text2 = "000 cm";
+  if (targetHeight < 10)
+  {
+    text2[0] = '0';
+    text2[1] = '0';
+    text2[2] = '0' + targetHeight;
+  }
+  else if (targetHeight < 100)
+  {
+    text2[0] = '0';
+    text2[1] = '0' + targetHeight / 10;
+    text2[2] = '0' + targetHeight % 10;
+  }
+  else
+  {
+    text2[0] = '0' + targetHeight / 100;
+    text2[1] = '0' + (targetHeight % 100) / 10;
+    text2[2] = '0' + targetHeight % 10;
+  }
+  drawText(text2, ST7735_WHITE);
 }
 
 bool touchLoop(void *)
 {
-  getTouch();
+  bool allTouched = digitalRead(TOUCH_PIN_NORTH) == HIGH && digitalRead(TOUCH_PIN_EAST) == HIGH && digitalRead(TOUCH_PIN_SOUTH) == HIGH && digitalRead(TOUCH_PIN_WEST) == HIGH;
+  if (allTouched)
+  {
+    tft_timer.cancel();
+    tft_timer.every(2000, tftRotateLoop);
+
+    int value = analogRead(ROTATE_PIN);
+    int currentSegment = value / ROTATE_STEP;
+    do
+    {
+      rotateSegment = random(0, 8);
+    } while (rotateSegment == currentSegment);
+    lastSegment = currentSegment;
+
+    timer.every(200, rotateLoop);
+    playSoundTimer(melody, noteDurations, melody_size);
+    Serial.println("allTouched");
+    isRotateGame = true;
+    return false;
+  }
+  return true;
+}
+
+bool tftTouchLoop(void *)
+{
+  tft.fillScreen(ST7735_BLACK);
+  drawTextCentered("Embrace me", ST7735_WHITE, 2);
   return true;
 }
 
@@ -263,6 +420,8 @@ bool keyListener(void *)
 {
   char key = keypad.getKey();
 
+  Serial.println(key);
+
   if (key != NO_KEY)
   {
     Serial.println(key);
@@ -270,26 +429,47 @@ bool keyListener(void *)
     noTone(PIEZO_PIN);
     // playSoundTimer(melody2, noteDurations2, melody2_size);
 
-    int notes[] = {keyToNoteMap(key), 0};
-    int noteDurations[] = {4, 1};
+    int keyNotes[] = {keyToNoteMap(key), 0};
+    int keyNoteDurations[] = {4, 1};
 
-    playSoundTimer(notes, noteDurations, 2);
+    playSoundTimer(keyNotes, keyNoteDurations, 2);
 
-    currentKeys[keyIndex++] = key;
-    if (keyIndex == 4)
+    if (isRotateGame)
     {
-      keyIndex = 0;
-      if (checkKeys())
+      currentKeys[keyIndex++] = key;
+      if (keyIndex == 4)
       {
-        win = true;
-        tft.fillScreen(ST7735_BLACK);
-        drawTextCentered("You win!", ST7735_WHITE, 9,2);
-        openVault();
-        return false;
+        keyIndex = 0;
+        if (checkKeys())
+        {
+          playSound(keyNotes, keyNoteDurations, 1);
+          keyIndex = 5;
+          win = true;
+          tft_timer.cancel();
+          tft.fillScreen(ST7735_BLACK);
+          timer.cancel();
+          drawTextCentered("You win!", ST7735_WHITE, 2);
+
+          openVault();
+          delay(1000);
+          playSound(melody, noteDurations, melody_size);
+          return false;
+        }
+        else
+        {
+          playSoundTimer(falseSound, falseSoundDuration, falseSoundSize);
+        }
       }
     }
   }
 
+  return true;
+}
+
+bool tftRotateLoop(void *)
+{
+  tft.fillScreen(ST7735_BLACK);
+  drawTextCentered("Rotate me", ST7735_WHITE, 2);
   return true;
 }
 
@@ -312,35 +492,6 @@ bool checkKeys()
   return true;
 }
 
-void getTouch()
-{
-
-  if (digitalRead(TOUCH_PIN_NORTH) == HIGH)
-  {
-    Serial.println("NORTH");
-  }
-  if (digitalRead(TOUCH_PIN_EAST) == HIGH)
-  {
-    Serial.println("EAST");
-    if (note_timer.empty())
-    {
-      playSoundTimer(melody, noteDurations, melody_size);
-    }
-  }
-  if (digitalRead(TOUCH_PIN_SOUTH) == HIGH)
-  {
-    Serial.println("SOUTH");
-  }
-  if (digitalRead(TOUCH_PIN_WEST) == HIGH)
-  {
-    Serial.println("WEST");
-    if (note_timer.empty())
-    {
-      playSoundTimer(melody, noteDurations, melody_size);
-    }
-  }
-}
-
 int getDistance()
 {
   digitalWrite(DISTANCE_TRIGGER_PIN, LOW);
@@ -352,17 +503,17 @@ int getDistance()
   int distance = (duration / 2) * 0.03432;
   if (distance >= 500 || distance <= 0)
   {
-    // Serial.println("Kein Messwert");
+    return lastHeight;
   }
   else //  Ansonsten…
   {
-    Serial.print(distance);
-    Serial.println(" cm");
+    return distance;
   }
 }
 
 void playSound(const int melody[], const int noteDurations[], const int arr_len)
 {
+  // Blocks
   int delayTime = 0;
   for (int thisNote = 0; thisNote < arr_len; thisNote++)
   {
@@ -383,6 +534,7 @@ void playSound(const int melody[], const int noteDurations[], const int arr_len)
 
 void playSoundTimer(const int melody[], const int noteDurations[], int arr_len)
 {
+  // Doesn't block
   int delayTime = 0;
   for (int thisNote = 0; thisNote < arr_len; thisNote++)
   {
@@ -414,8 +566,6 @@ void playSoundTimer(const int melody[], const int noteDurations[], int arr_len)
   }
 }
 
-
-/*
 void drawText(char *text, uint16_t color)
 {
   tft.setCursor(0, 0);
@@ -424,31 +574,28 @@ void drawText(char *text, uint16_t color)
   tft.setTextWrap(true);
   tft.print(text);
 }
-*/
 
-void drawTextCentered(char *text, uint16_t color, int length, int textSize) {
-  int x = (tft.width() - (length * textSize * 6)) / 2;
+void drawTextCentered(char *text, uint16_t color, int textSize)
+{
+  tft.setTextColor(ST7735_BLACK);
+  tft.print(previousCenterText);
+  previousCenterText = text;
+  int x = (tft.width() - (strlen(text) * textSize * 6)) / 2;
   int y = (tft.height() - (textSize * 8)) / 2;
   tft.setCursor(x, y);
-  Serial.print(x);
-  Serial.print(y);
   tft.setTextColor(color);
   tft.setTextSize(textSize);
   tft.setTextWrap(true);
   tft.print(text);
-  
 }
 
-
-
-
-void closeVault() {
-  stepper.step(-stepsPerRevolution);
-  delay(2000);
+void closeVault()
+{
+  stepper.step(SPR);
+  delay(500);
 }
 
-
-void openVault() {
-  stepper.step(stepsPerRevolution);
-  delay(2000);
+void openVault()
+{
+  stepper.step(-SPR);
 }
