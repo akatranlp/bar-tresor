@@ -4,14 +4,15 @@
 #include <Adafruit_ST7735.h>
 #include <arduino-timer.h>
 #include <Keypad.h>
+#include <Stepper.h>
 
-/*
 //--------------------------------------
 //-----------Motor----------------------
-const int AIA = 4;
-const int AIB = 5;
-byte speed = 255;
-*/
+const int stepsPerRevolution = 512;  // change this to fit the number of steps per revolution
+const int rolePerMinute = 15;         // Adjustable range of 28BYJ-48 stepper is 0~17 rpm
+
+// initialize the stepper library on pins 34 through 40:
+Stepper stepper(stepsPerRevolution, 34,  38,36, 40);
 
 //--------------------------------------
 //-----------Timer----------------------
@@ -45,7 +46,9 @@ int lastSegment;
 #define TFT_RST 8
 #define TFT_DC 9
 
-Adafruit_ST7735 tft = Adafruit_ST7735(TFT_CS, TFT_DC, TFT_RST);
+Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RST);
+
+auto tft_timer = timer_create_default();
 
 //--------------------------------------
 //-----------Keypad---------------------
@@ -164,7 +167,7 @@ void setup()
   } while (rotateSegment == currentSegment);
 
   tft.initR(INITR_BLACKTAB); // initialize a ST7735S chip, black tab
-  tft.fillScreen(ST7735_BLACK);
+  void drawInit();
 
   delay(200);
   int beep_sound[] = {NOTE_C7};
@@ -174,7 +177,8 @@ void setup()
 
   tft.setRotation(1);
 
-  drawText("Hello World", ST7735_WHITE);
+  stepper.setSpeed(rolePerMinute);
+  closeVault();
 
   delay(200);
 
@@ -182,21 +186,13 @@ void setup()
   // timer.every(200, mainLoop);
   timer.every(200, rotateLoop);
 
-  /*
+}
 
-  timer.every(4000,
-              [](void *)
-              {
-                close();
-                timer.in(2000,
-                         [](void *)
-                         {
-                           open();
-                           return true;
-                         });
-                return true;
-              });
-  */
+void drawInit() {
+  tft.fillScreen(ST7735_BLACK);
+  drawTextCentered("Hello World", ST7735_WHITE,12,3);
+  drawTextCentered("You win!", ST7735_WHITE, 9,2);
+  //drawText("Hello World", ST7735_WHITE);
 }
 
 //--------------------------------------
@@ -287,7 +283,8 @@ bool keyListener(void *)
       {
         win = true;
         tft.fillScreen(ST7735_BLACK);
-        drawText("You win!", ST7735_WHITE);
+        drawTextCentered("You win!", ST7735_WHITE, 9,2);
+        openVault();
         return false;
       }
     }
@@ -300,6 +297,7 @@ void loop()
 {
   timer.tick();
   note_timer.tick();
+  tft_timer.tick();
 }
 
 bool checkKeys()
@@ -416,6 +414,8 @@ void playSoundTimer(const int melody[], const int noteDurations[], int arr_len)
   }
 }
 
+
+/*
 void drawText(char *text, uint16_t color)
 {
   tft.setCursor(0, 0);
@@ -424,44 +424,31 @@ void drawText(char *text, uint16_t color)
   tft.setTextWrap(true);
   tft.print(text);
 }
-
-/*
-void close()
-{
-  analogWrite(AIA, 0);
-  analogWrite(AIB, speed);
-  timer.in(250,
-           [](void *)
-           {
-             analogWrite(AIA, 0);
-             analogWrite(AIB, 0);
-             return true;
-           });
-}
-
-void open()
-{
-  analogWrite(AIA, speed);
-  analogWrite(AIB, 0);
-  timer.in(250,
-           [](void *)
-           {
-             analogWrite(AIA, 0);
-             analogWrite(AIB, 0);
-             return true;
-           });
-}
-
-void backward()
-{
-  analogWrite(AIA, 0);
-  analogWrite(AIB, speed);
-}
-
-void forward()
-{
-  analogWrite(AIA, speed);
-  analogWrite(AIB, 0);
-}
-
 */
+
+void drawTextCentered(char *text, uint16_t color, int length, int textSize) {
+  int x = (tft.width() - (length * textSize * 6)) / 2;
+  int y = (tft.height() - (textSize * 8)) / 2;
+  tft.setCursor(x, y);
+  Serial.print(x);
+  Serial.print(y);
+  tft.setTextColor(color);
+  tft.setTextSize(textSize);
+  tft.setTextWrap(true);
+  tft.print(text);
+  
+}
+
+
+
+
+void closeVault() {
+  stepper.step(-stepsPerRevolution);
+  delay(2000);
+}
+
+
+void openVault() {
+  stepper.step(stepsPerRevolution);
+  delay(2000);
+}

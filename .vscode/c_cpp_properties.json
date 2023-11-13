@@ -3,7 +3,7 @@
     "configurations": [
         {
             "name": "Arduino",
-            "compilerPath": "/home/fabianp/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/bin/avr-g++",
+            "compilerPath": "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\bin\\avr-g++",
             "compilerArgs": [
                 "-w",
                 "-std=gnu++11",
@@ -16,21 +16,22 @@
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
-                "/home/fabianp/.arduino15/packages/arduino/hardware/avr/1.8.6/cores/arduino",
-                "/home/fabianp/.arduino15/packages/arduino/hardware/avr/1.8.6/variants/mega",
-                "/home/fabianp/Arduino/libraries/Adafruit_GFX_Library",
-                "/home/fabianp/Arduino/libraries/Adafruit_BusIO",
-                "/home/fabianp/.arduino15/packages/arduino/hardware/avr/1.8.6/libraries/Wire/src",
-                "/home/fabianp/.arduino15/packages/arduino/hardware/avr/1.8.6/libraries/SPI/src",
-                "/home/fabianp/Arduino/libraries/Adafruit_ST7735_and_ST7789_Library",
-                "/home/fabianp/Arduino/libraries/arduino-timer/src",
-                "/home/fabianp/Arduino/libraries/Keypad/src",
-                "/home/fabianp/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include",
-                "/home/fabianp/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/lib/gcc/avr/7.3.0/include-fixed",
-                "/home/fabianp/.arduino15/packages/arduino/tools/avr-gcc/7.3.0-atmel3.6.1-arduino7/avr/include"
+                "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\cores\\arduino",
+                "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\variants\\mega",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\Adafruit_GFX_Library",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\Adafruit_BusIO",
+                "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\Wire\\src",
+                "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\libraries\\SPI\\src",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\Adafruit_ST7735_and_ST7789_Library",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\arduino-timer\\src",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\Keypad\\src",
+                "C:\\Users\\Dominik\\Documents\\Arduino\\libraries\\Stepper\\src",
+                "c:\\users\\dominik\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\lib\\gcc\\avr\\7.3.0\\include",
+                "c:\\users\\dominik\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\lib\\gcc\\avr\\7.3.0\\include-fixed",
+                "c:\\users\\dominik\\appdata\\local\\arduino15\\packages\\arduino\\tools\\avr-gcc\\7.3.0-atmel3.6.1-arduino7\\avr\\include"
             ],
             "forcedInclude": [
-                "/home/fabianp/.arduino15/packages/arduino/hardware/avr/1.8.6/cores/arduino/Arduino.h"
+                "C:\\Users\\Dominik\\AppData\\Local\\Arduino15\\packages\\arduino\\hardware\\avr\\1.8.6\\cores\\arduino\\Arduino.h"
             ],
             "cStandard": "c11",
             "cppStandard": "c++11",

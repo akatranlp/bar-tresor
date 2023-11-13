@@ -2,6 +2,6 @@
     "configuration": "cpu=atmega2560",
     "board": "arduino:avr:mega",
     "sketch": "Main/Main.ino",
-    "port": "/dev/ttyUSB0",
+    "port": "COM5",
     "output": "output"
 }
