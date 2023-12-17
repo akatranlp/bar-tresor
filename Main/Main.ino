@@ -13,10 +13,10 @@
 #include <KeyPlayer.h>
 #include <TouchPlayer.h>
 
-#include "./Game.h"
-#include "./Game1.h"
-#include "./Game2.h"
-#include "./Game3.h"
+#include <Game.h>
+#include <GameEasy.h>
+#include <GameNormal.h>
+#include <GameHard.h>
 
 // ------------------------------------
 // ----------DELTA TIME----------------
@@ -308,15 +308,15 @@ void loop()
       {
         if (cardId == 1)
         {
-          game = new Game1(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
+          game = new GameEasy(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
         }
         else if (cardId == 2)
         {
-          game = new Game2(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
+          game = new GameNormal(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
         }
         else if (cardId == 3)
         {
-          game = new Game3(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
+          game = new GameHard(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
         }
 
         Serial.println("Start Game");
