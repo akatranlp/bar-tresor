@@ -3,8 +3,8 @@
 class Game2 : public Game
 {
 public:
-    Game2(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer)
-        : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer)
+    Game2(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer)
+        : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer, tiltPlayer)
     {
         Serial.println("Game2");
         auto current_touch = 0;
@@ -71,6 +71,49 @@ public:
     {
         switch (m_state)
         {
+        case State::START_DISTANCE:
+        {
+            if (distance == -1)
+            {
+            }
+            else if (distance > 120)
+            {
+            }
+            else
+            {
+                Serial.print("distance: ");
+                Serial.println(distance);
+                if (distance > 10 && distance < 12)
+                {
+                    m_micros = 0;
+                    m_state = State::WAIT_DISTANCE;
+                }
+            }
+        }
+        break;
+        case State::WAIT_DISTANCE:
+        {
+            int touch = this->m_touch_player->getTouchInput();
+
+            Serial.print("touch: ");
+            Serial.println(touch);
+
+            if ((distance != -1 && distance < 10 && distance > 12) || (touch & 0b1111) != 0b1111)
+            {
+                m_state = State::START_DISTANCE;
+            }
+
+            if (m_micros > 3000000)
+            {
+                this->m_sound_player->playSuccessSound();
+                m_state = State::ROTATE;
+            }
+            else
+            {
+                m_micros += delta;
+            }
+        }
+        break;
         case State::ROTATE:
         {
             int segments = this->m_rotate_player->getSegments();
@@ -230,6 +273,8 @@ public:
 private:
     enum class State
     {
+        START_DISTANCE,
+        WAIT_DISTANCE,
         ROTATE,
         KEY_INPUT,
         START_TOUCH,
@@ -237,6 +282,8 @@ private:
         FAIL_TOUCH,
         END,
     };
+
+    unsigned long m_micros;
 
     int m_left_segment;
     int m_right_segment;
@@ -248,5 +295,5 @@ private:
     int m_current_touch_index = 0;
     TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
 
-    State m_state = State::ROTATE;
+    State m_state = State::START_DISTANCE;
 };
