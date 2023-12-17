@@ -71,6 +71,60 @@ public:
     {
         switch (m_state)
         {
+        case State::CLOCK:
+        {
+            this->m_rotate_player->getSegments(1024 / 12);
+        }
+        break;
+        case State::START_TILT:
+        {
+            m_tilt_index = 0;
+            m_state = State::TILT;
+        }
+        break;
+        case State::TILT:
+        {
+            auto tilt = this->m_tilt_player->getTilt();
+            if (tilt == TiltPlayer::Tilt::None)
+            {
+                return false;
+            }
+            if (tilt == m_last_tilt_input)
+            {
+                return false;
+            }
+            m_last_tilt_input = tilt;
+            if (tiltSequence[m_tilt_index] == tilt)
+            {
+                m_tilt_index++;
+                if (m_tilt_index > 3)
+                {
+                    this->m_sound_player->playSuccessSound();
+                    m_state = State::START_DISTANCE;
+                }
+                else
+                {
+                    this->m_sound_player->playCorrectSound();
+                    m_state = State::NO_TILT;
+                }
+            }
+            else
+            {
+                this->m_sound_player->playFailSound();
+                m_tilt_index = 0;
+                m_state = State::NO_TILT;
+            }
+        }
+        break;
+        case State::NO_TILT:
+        {
+            auto tilt = this->m_tilt_player->getTilt();
+            if (tilt == TiltPlayer::Tilt::None)
+            {
+                m_state = State::TILT;
+            }
+        }
+        break;
         case State::START_DISTANCE:
         {
             if (distance == -1)
@@ -246,6 +300,10 @@ public:
 private:
     enum class State
     {
+        CLOCK,
+        START_TILT,
+        TILT,
+        NO_TILT,
         START_DISTANCE,
         WAIT_DISTANCE,
         ROTATE,
@@ -261,11 +319,13 @@ private:
     int m_right_Segment;
 
     int m_keyIndex = 0;
+    int m_tilt_index = 0;
+    TiltPlayer::Tilt m_last_tilt_input = TiltPlayer::Tilt::None;
 
     unsigned long m_micros;
 
     int m_current_touch_index = 0;
     TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
 
-    State m_state = State::START_DISTANCE;
+    State m_state = State::START_TILT;
 };

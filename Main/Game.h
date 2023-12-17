@@ -2,6 +2,8 @@
 
 TouchPlayer::Touch rightTouches[12] = {TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None};
 
+TiltPlayer::Tilt tiltSequence[8] = {TiltPlayer::Tilt::Backward, TiltPlayer::Tilt::Right, TiltPlayer::Tilt::Forward, TiltPlayer::Tilt::Left, TiltPlayer::Tilt::None, TiltPlayer::Tilt::None, TiltPlayer::Tilt::None, TiltPlayer::Tilt::None};
+
 class Game
 {
 public:
