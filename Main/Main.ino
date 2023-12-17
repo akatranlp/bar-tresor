@@ -1,20 +1,17 @@
-#include <GY521_registers.h>
-#include <GY521.h>
-
 #include <SPI.h>
 #include <Wire.h>
 #include <MFRC522.h>
 #include <Stepper.h>
 #include <Keypad.h>
 
-#include "./pitches.h"
-#include "./SoundPlayer.h"
-#include "./DistancePlayer.h"
-#include "./DisplayPlayer.h"
-#include "./TouchPlayer.h"
-#include "./RotatePlayer.h"
-#include "./KeyPlayer.h"
-#include "./TiltPlayer.h"
+#include <DistancePlayer.h>
+#include <DisplayPlayer.h>
+#include <RotatePlayer.h>
+#include <pitches.h>
+#include <SoundPlayer.h>
+#include <TiltPlayer.h>
+#include <KeyPlayer.h>
+#include <TouchPlayer.h>
 
 #include "./Game.h"
 #include "./Game1.h"
@@ -98,12 +95,6 @@ byte rowPins[ROWS] = {37, 39, 41, 43}; // connect to the row pinouts of the keyp
 byte colPins[COLS] = {45, 49, 47};     // connect to the column pinouts of the keypad
 
 KeyPlayer keyPlayer(&soundPlayer, keys, rowPins, colPins, ROWS, COLS);
-
-// ------------------------------------
-// --------------Gyro------------------
-
-#define GYRO_SDA 20
-GY521 gyro(GYRO_SDA);
 
 // ------------------------------------
 // --------------MPU6050---------------

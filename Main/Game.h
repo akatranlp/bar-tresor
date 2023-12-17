@@ -1,10 +1,10 @@
-#include "SoundPlayer.h"
-#include "DistancePlayer.h"
-#include "DisplayPlayer.h"
-#include "TouchPlayer.h"
-#include "RotatePlayer.h"
-#include "KeyPlayer.h"
-#include "TiltPlayer.h"
+#include <TouchPlayer.h>
+#include <KeyPlayer.h>
+#include <TiltPlayer.h>
+#include <SoundPlayer.h>
+#include <DistancePlayer.h>
+#include <DisplayPlayer.h>
+#include <RotatePlayer.h>
 
 #pragma once
 
