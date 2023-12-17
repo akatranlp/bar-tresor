@@ -1,18 +1,25 @@
 #include "./pitches.h"
 
+#pragma once
+
 #define IMPLEMENTATION LIFO
 #define NOTE_CAPACITY 128
 
-#define STATE_WAITING_FOR_NOTE 0
-#define STATE_START_NOTE 1
-#define STATE_PLAYING_NOTE 2
-#define STATE_STOP_NOTE 3
-#define STATE_PAUSE_NOTE 4
+const int failSound[] = {NOTE_C3, NOTE_A2, 0};
+const int failDurations[] = {8, 4, 2};
+const int failSize = sizeof(failSound) / sizeof(failSound[0]);
+
+const int successSound[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4};
+const int successDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
+const int successSize = sizeof(successSound) / sizeof(successSound[0]);
+
+const int correctSound = NOTE_A4;
+const int correctDurations = 4;
 
 struct Note
 {
     long note;
-    long duraction;
+    long duration;
 };
 
 Note m_notes[NOTE_CAPACITY];
@@ -30,7 +37,7 @@ public:
     {
         m_notes_size = 0;
         m_notes_current = 0;
-        m_state = STATE_START_NOTE;
+        m_state = State::START_NOTE;
         noTone(m_sound_pin);
         for (int i = 0; i < arr_len; ++i)
         {
@@ -41,39 +48,65 @@ public:
         }
     }
 
+    void playFailSound()
+    {
+        playSound(failSound, failDurations, failSize);
+    }
+
+    void playSuccessSound()
+    {
+        playSound(successSound, successDurations, successSize);
+    }
+
+    void playCorrectSound()
+    {
+        addTone(correctSound, correctDurations);
+    }
+
+    bool isEmpty()
+    {
+        bool isEmpty = m_notes_current == m_notes_size;
+        return isEmpty;
+    }
+
     void addTone(int note, int duration)
     {
-        Note _note = Note{note, duration};
-        m_notes[m_notes_size - 1] = _note;
+        int noteDuration = 800 / duration;
+        Note _note = Note{note, noteDuration};
         m_notes_size++;
+        m_notes[m_notes_size - 1] = _note;
+        if (m_state == State::WAITING_FOR_NOTE)
+        {
+            m_state = State::START_NOTE;
+        }
     }
 
     void update(unsigned long delta)
     {
         switch (m_state)
         {
-        case STATE_WAITING_FOR_NOTE:
+        case State::WAITING_FOR_NOTE:
             break;
-        case STATE_START_NOTE:
-            if (m_notes_current < m_notes_size)
+        case State::START_NOTE:
+            if (!isEmpty())
             {
                 Note *note = &m_notes[m_notes_current];
-                tone(m_sound_pin, note->note, note->duraction);
-                m_state = STATE_PLAYING_NOTE;
+                tone(m_sound_pin, note->note, note->duration);
+                m_state = State::PLAYING_NOTE;
                 m_micros = 0;
             }
             else
             {
-                m_state = STATE_WAITING_FOR_NOTE;
+                m_state = State::WAITING_FOR_NOTE;
             }
             break;
-        case STATE_PLAYING_NOTE:
-            if (m_notes_current < m_notes_size)
+        case State::PLAYING_NOTE:
+            if (!isEmpty())
             {
                 Note *note = &m_notes[m_notes_current];
-                if (m_micros >= note->duraction * 1000)
+                if (m_micros >= note->duration * 800)
                 {
-                    m_state = STATE_PAUSE_NOTE;
+                    m_state = State::PAUSE_NOTE;
                     noTone(m_sound_pin);
                     m_micros = 0;
                 }
@@ -84,16 +117,16 @@ public:
             }
             else
             {
-                m_state = STATE_WAITING_FOR_NOTE;
+                m_state = State::WAITING_FOR_NOTE;
             }
             break;
-        case STATE_PAUSE_NOTE:
-            if (m_notes_current < m_notes_size)
+        case State::PAUSE_NOTE:
+            if (!isEmpty())
             {
                 Note *note = &m_notes[m_notes_current];
-                if (m_micros >= note->duraction * 1000 * 1.3)
+                if (m_micros >= note->duration * 800 * 1.3)
                 {
-                    m_state = STATE_STOP_NOTE;
+                    m_state = State::STOP_NOTE;
                 }
                 else
                 {
@@ -102,18 +135,27 @@ public:
             }
             else
             {
-                m_state = STATE_WAITING_FOR_NOTE;
+                m_state = State::WAITING_FOR_NOTE;
             }
             break;
-        case STATE_STOP_NOTE:
+        case State::STOP_NOTE:
             m_notes_current++;
-            m_state = STATE_START_NOTE;
+            m_state = State::START_NOTE;
             break;
         }
     }
 
 private:
-    int m_state = STATE_WAITING_FOR_NOTE;
+    enum class State
+    {
+        WAITING_FOR_NOTE,
+        START_NOTE,
+        PLAYING_NOTE,
+        STOP_NOTE,
+        PAUSE_NOTE
+    };
+
+    State m_state = State::WAITING_FOR_NOTE;
     int m_notes_current = 0;
     int m_notes_size = 0;
 

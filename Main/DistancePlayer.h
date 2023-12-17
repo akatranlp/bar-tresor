@@ -1,9 +1,4 @@
-
-#define STATE_BEFORE_PING 0
-#define STATE_WAIT_FOR_START 1
-#define STATE_START_PING 2
-#define STATE_WAIT_FOR_ECHO 3
-#define STATE_ECHO 4
+#pragma once
 
 class DistancePlayer
 {
@@ -19,39 +14,41 @@ public:
     {
         switch (m_state)
         {
-        case STATE_BEFORE_PING:
+        case State::WAIT_FOR_START:
+            break;
+        case State::BEFORE_PING:
             digitalWrite(m_trigger_pin, LOW);
-            m_state = STATE_WAIT_FOR_START;
+            m_state = State::WAIT_FOR_PING;
             m_micros = 0;
             break;
-        case STATE_WAIT_FOR_START:
+        case State::WAIT_FOR_PING:
             if (m_micros >= 5000)
             {
-                m_state = STATE_START_PING;
+                m_state = State::START_PING;
             }
             else
             {
                 m_micros += delta;
             }
             break;
-        case STATE_START_PING:
+        case State::START_PING:
             digitalWrite(m_trigger_pin, HIGH);
-            m_state = STATE_WAIT_FOR_ECHO;
+            m_state = State::WAIT_FOR_ECHO;
             m_micros = 0;
             break;
-        case STATE_WAIT_FOR_ECHO:
+        case State::WAIT_FOR_ECHO:
             if (m_micros >= 10000)
             {
-                m_state = STATE_ECHO;
+                m_state = State::START_ECHO;
             }
             else
             {
                 m_micros += delta;
             }
             break;
-        case STATE_ECHO:
+        case State::START_ECHO:
             digitalWrite(m_trigger_pin, LOW);
-            m_state = STATE_BEFORE_PING;
+            m_state = State::BEFORE_PING;
             int duration = pulseIn(m_echo_pin, HIGH);
             int distance = (duration / 2) * 0.03432;
             if (distance >= 500 || distance <= 0)
@@ -69,10 +66,20 @@ public:
     }
 
 private:
+    enum class State
+    {
+        WAIT_FOR_START,
+        BEFORE_PING,
+        WAIT_FOR_PING,
+        START_PING,
+        WAIT_FOR_ECHO,
+        START_ECHO
+    };
+
     int m_echo_pin;
     int m_trigger_pin;
     unsigned long m_micros = 0;
 
     int m_last_height = 0;
-    int m_state = STATE_BEFORE_PING;
+    State m_state = State::BEFORE_PING;
 };
