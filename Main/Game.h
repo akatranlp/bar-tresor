@@ -1,4 +1,17 @@
+#include "SoundPlayer.h"
+#include "DistancePlayer.h"
+#include "DisplayPlayer.h"
+#include "TouchPlayer.h"
+#include "RotatePlayer.h"
+#include "KeyPlayer.h"
+#include "TiltPlayer.h"
+
 #pragma once
+
+const char rotateKeys[] = {'1', '3', '3', '7'};
+const int rotateMelody[] = {NOTE_C4, NOTE_E4, NOTE_E4, NOTE_B4, 0};
+const int rotateNoteDurations[] = {4, 4, 4, 4, 1};
+const int rotateMelodySize = sizeof(rotateMelody) / sizeof(rotateMelody[0]);
 
 TouchPlayer::Touch rightTouches[12] = {TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None, TouchPlayer::Touch::None};
 

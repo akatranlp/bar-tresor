@@ -67,7 +67,7 @@ TouchPlayer touchPlayer(TOUCH_PIN_TOP, TOUCH_PIN_BACK, TOUCH_PIN_LEFT, TOUCH_PIN
 #define ROTATE_PIN_LEFT A1
 #define ROTATE_PIN_RIGHT A0
 #define ROTATE_STEP 128
-RotatePlayer rotatePlayer(ROTATE_PIN_LEFT, ROTATE_PIN_RIGHT, ROTATE_STEP);
+RotatePlayer rotatePlayer(ROTATE_PIN_LEFT, ROTATE_PIN_RIGHT);
 
 // ------------------------------------
 // ------------Stepper-----------------

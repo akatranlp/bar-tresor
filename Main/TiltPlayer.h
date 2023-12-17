@@ -7,11 +7,11 @@ class TiltPlayer
 public:
     enum class Tilt
     {
-        None,
         Left,
         Right,
         Forward,
         Backward,
+        None,
     };
     struct Value
     {
@@ -20,7 +20,7 @@ public:
         int16_t AcZ;
     };
 
-    TiltPlayer(byte address) : m_address(address) {}
+    TiltPlayer(uint8_t address) : m_address(address) {}
 
     void begin()
     {
@@ -36,10 +36,10 @@ public:
         Wire.beginTransmission(m_address);
         Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
         Wire.endTransmission(false);
-        Wire.requestFrom(m_address, 6, true);     // request a total of 14 registers
-        int AcX = Wire.read() << 8 | Wire.read(); // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
-        int AcY = Wire.read() << 8 | Wire.read(); // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
-        int AcZ = Wire.read() << 8 | Wire.read(); // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
+        Wire.requestFrom(m_address, (uint8_t)6, (uint8_t) true); // request a total of 14 registers
+        int AcX = Wire.read() << 8 | Wire.read();                // 0x3B (ACCEL_XOUT_H) & 0x3C (ACCEL_XOUT_L)
+        int AcY = Wire.read() << 8 | Wire.read();                // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
+        int AcZ = Wire.read() << 8 | Wire.read();                // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
 
         /* Serial.print("Tilt: ");
         Serial.print(AcX);
@@ -83,5 +83,5 @@ public:
     }
 
 private:
-    byte m_address;
+    uint8_t m_address;
 };

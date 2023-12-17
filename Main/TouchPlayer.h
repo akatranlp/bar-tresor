@@ -1,4 +1,4 @@
-// Touch Level
+#pragma once
 
 class TouchPlayer
 {

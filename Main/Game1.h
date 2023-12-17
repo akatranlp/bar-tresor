@@ -1,9 +1,6 @@
-#pragma once
+#include "Game.h"
 
-const char rotateKeys[] = {'1', '3', '3', '7'};
-const int rotateMelody[] = {NOTE_C4, NOTE_E4, NOTE_E4, NOTE_B4, 0};
-const int rotateNoteDurations[] = {4, 4, 4, 4, 1};
-const int rotateMelodySize = sizeof(rotateMelody) / sizeof(rotateMelody[0]);
+#pragma once
 
 char currentKeys[] = {0, 0, 0, 0};
 
@@ -14,6 +11,9 @@ public:
         : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer, tiltPlayer)
     {
         Serial.println("Game1");
+
+        int m_distance = random(10, 20);
+        int m_duration = random(1, 5);
 
         int segments = this->m_rotate_player->getSegments();
         int leftSegment = segments >> 4;
@@ -34,6 +34,8 @@ public:
         Serial.print(" - ");
         Serial.print("m_rotate_segment: ");
         Serial.println(m_rotate_segment);
+
+        m_hour = random(1, 13);
 
         auto current_touch = 0;
         auto touch_count = 0;
@@ -73,7 +75,39 @@ public:
         {
         case State::CLOCK:
         {
-            this->m_rotate_player->getSegments(1024 / 12);
+            auto segment = this->m_rotate_player->getSegments(1024 / 12);
+            auto leftSegment = segment >> 4;
+            auto rightSegment = segment & 0b1111;
+
+            int hour = leftSegment == 11 ? 12 : 11 - leftSegment;
+            int minute = (11 - rightSegment);
+
+            if (this->m_sound_player->isEmpty())
+            {
+                int melody[13] = {};
+                int durations[13] = {};
+                for (int i = 0; i < m_hour; i++)
+                {
+                    melody[i] = NOTE_C2;
+                    durations[i] = 4;
+                }
+                melody[m_hour] = 0;
+                durations[m_hour] = 1;
+
+                this->m_sound_player->playSound(melody, durations, m_hour + 1);
+            }
+
+            /* Serial.print("hour: ");
+            Serial.print(hour);
+            Serial.print(" - ");
+            Serial.print("minute: ");
+            Serial.println(minute); */
+
+            if (hour == m_hour && (minute / 3) == 0)
+            {
+                this->m_sound_player->playSuccessSound();
+                m_state = State::START_TILT;
+            }
         }
         break;
         case State::START_TILT:
@@ -137,7 +171,7 @@ public:
             {
                 Serial.print("distance: ");
                 Serial.println(distance);
-                if (distance > 10 && distance < 12)
+                if (distance >= m_distance - 1 && distance <= m_distance + 1)
                 {
                     m_micros = 0;
                     m_state = State::WAIT_DISTANCE;
@@ -147,11 +181,11 @@ public:
         break;
         case State::WAIT_DISTANCE:
         {
-            if (distance != -1 && distance < 10 && distance > 12)
+            if (distance != -1 && distance < m_distance - 1 && distance > m_distance + 1)
             {
                 m_state = State::START_DISTANCE;
             }
-            if (m_micros > 3000000)
+            if (m_micros > m_duration * 1000 * 1000)
             {
                 this->m_sound_player->playSuccessSound();
                 m_state = State::ROTATE;
@@ -298,6 +332,12 @@ public:
     }
 
 private:
+    // reihgenfolge
+    // 1. Touchi
+    // 2. Clock
+    // 3. Tilt
+    // 4. Distance
+    // 5. Keypad
     enum class State
     {
         CLOCK,
@@ -318,6 +358,11 @@ private:
     int m_left_Segment;
     int m_right_Segment;
 
+    int m_distance;
+    int m_duration;
+
+    int m_hour;
+
     int m_keyIndex = 0;
     int m_tilt_index = 0;
     TiltPlayer::Tilt m_last_tilt_input = TiltPlayer::Tilt::None;
@@ -327,5 +372,5 @@ private:
     int m_current_touch_index = 0;
     TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
 
-    State m_state = State::START_TILT;
+    State m_state = State::CLOCK;
 };
