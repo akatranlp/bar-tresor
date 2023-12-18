@@ -1,3 +1,11 @@
+/* *******************************************************
+ *  DistancePlayer.h
+ *  This library is used to measure the distance from the
+ *  bottom of our vault to any surface underneath it
+ *
+ *  It uses the ultrasonic sensor HR-SR04
+ *  to measure the distance
+ ********************************************************/
 #include <Arduino.h>
 
 #pragma once
@@ -7,17 +15,17 @@ class DistancePlayer
 public:
     DistancePlayer(int echo_pin, int trigger_pin);
 
+    // update the state machine and return the measured height if available
     int update(unsigned long delta);
 
 private:
     enum class State
     {
-        WAIT_FOR_START,
         BEFORE_PING,
         WAIT_FOR_PING,
         START_PING,
-        WAIT_FOR_ECHO,
-        START_ECHO
+        PINGING,
+        ECHO,
     };
 
     int m_echo_pin;
