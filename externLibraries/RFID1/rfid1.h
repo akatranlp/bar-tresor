@@ -6,8 +6,9 @@
 
 // #include "SOFTSPI.h"
 
-#define uchar unsigned char
-#define uint unsigned int
+// Fabian Petersen: edited this because Keypad.h uses the same defines
+typedef unsigned char uchar;
+typedef unsigned int uint;
 
 // MF522 command bits
 #define PCD_IDLE 0x00		// NO action; cancel current commands

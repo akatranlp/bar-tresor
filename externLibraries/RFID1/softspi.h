@@ -1,7 +1,8 @@
 #pragma once
 
-#define uchar unsigned char
-#define uint unsigned int
+// Fabian Petersen: edited this because Keypad.h uses the same defines
+typedef unsigned char uchar;
+typedef unsigned int uint;
 
 class SOFTSPI
 {
