@@ -64,6 +64,7 @@ private:
         NO_TILT,
 
         INIT_DISTANCE,
+        DISTANCE_TEXT_DELAY,
         WAIT_FOR_DISTANCE_TEXT,
         START_DISTANCE,
         WAIT_DISTANCE,

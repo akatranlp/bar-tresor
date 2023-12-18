@@ -365,7 +365,7 @@ void loop()
   {
     if (m_micros > 1000 * 1000)
     {
-      int cardId = -1; // getCardId();
+      int cardId = getCardId();
       if (cardId == 0)
       {
         state = State::MANAGEMENT_OPEN;

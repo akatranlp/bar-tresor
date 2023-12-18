@@ -132,6 +132,7 @@ Game::Game(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlay
 
 void Game::generate_key_sequence()
 {
+    return;
     for (int i = 0; i < 4; i++)
     {
         int randomKey = random(0, 12);
@@ -354,10 +355,26 @@ bool Game::update(unsigned long delta, int distance)
     case State::INIT_DISTANCE:
     {
         distance_text.size = m_distance_text_lenght;
-        m_display_player->set_loop_text(false);
-        m_display_player->set_refresh_rate(2000);
-        m_display_player->draw_scrolling_text(&distance_text);
-        m_state = State::WAIT_FOR_DISTANCE_TEXT;
+        m_display_player->draw_text(&distance_text);
+        m_micros = 0;
+        m_state = State::DISTANCE_TEXT_DELAY;
+    }
+    break;
+    case State::DISTANCE_TEXT_DELAY:
+    {
+        if (m_micros > 2000000)
+        {
+            distance_text.size = m_distance_text_lenght;
+            m_display_player->set_loop_text(false);
+            m_display_player->set_refresh_rate(2000);
+            m_display_player->draw_scrolling_text(&distance_text);
+            m_state = State::WAIT_FOR_DISTANCE_TEXT;
+            m_micros = 0;
+        }
+        else
+        {
+            m_micros += delta;
+        }
     }
     break;
     case State::WAIT_FOR_DISTANCE_TEXT:
@@ -434,7 +451,7 @@ bool Game::update(unsigned long delta, int distance)
     break;
     case State::INIT_ROTATE:
     {
-        m_display_player->set_loop_text(false);
+        m_display_player->set_loop_text(true);
         m_display_player->set_refresh_rate(1500);
         m_display_player->draw_scrolling_text(&rotate_text);
         m_state = State::ROTATE;
