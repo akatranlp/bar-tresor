@@ -5,30 +5,24 @@ KeyPlayer::KeyPlayer(SoundPlayer *soundPlayer, const char keys[4][3], byte row_p
 {
 }
 
-bool KeyPlayer::isNewKey()
-{
-    return m_is_new_key;
-}
-
-char KeyPlayer::getKey()
-{
-    m_is_new_key = false;
-    return m_last_key;
-}
-
+// Read the input of the keypad, save it and play the corresponding sound
 void KeyPlayer::update()
 {
     char key = m_keypad.getKey();
-    if (key != NO_KEY)
+    if (key == NO_KEY)
     {
-        int keyNotes[] = {map_key_to_note(key), 0};
-        int keyNoteDurations[] = {4, 1};
-        m_sound_player->playSound(keyNotes, keyNoteDurations, 2);
-        m_last_key = key;
-        m_is_new_key = true;
+        return;
     }
+
+    int keyNotes[] = {map_key_to_note(key), 0};
+    int keyNoteDurations[] = {4, 1};
+    m_sound_player->playSound(keyNotes, keyNoteDurations, 2);
+
+    m_last_key = key;
+    m_is_new_key = true;
 }
 
+// Map the key to a note
 int map_key_to_note(char key)
 {
     switch (key)
