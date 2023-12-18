@@ -1,5 +1,4 @@
 #include "DisplayPlayer.h"
-#include <SoftSPIB.h>
 
 DisplayPlayer::DisplayPlayer(int cs, int dc, int rst)
     : m_tft(Adafruit_ST7735(cs, dc, rst))
@@ -8,10 +7,8 @@ DisplayPlayer::DisplayPlayer(int cs, int dc, int rst)
 
 void DisplayPlayer::begin()
 {
-    Serial.println("BEGIN");
-    m_tft.initR(INITR_BLACKTAB); // initialize a ST7735S chip, black tab
+    m_tft.initR(INITR_BLACKTAB);
 
-    // or white
     m_tft.fillScreen(ST7735_BLACK);
     m_tft.setRotation(1);
 
@@ -24,10 +21,15 @@ void DisplayPlayer::update(unsigned long delta)
 {
     switch (m_state)
     {
+    // ------------------------------------
+    // -----STATE: WAITING FOR START-------
+    // ------------------------------------
     case State::WAIT_FOR_START:
-    {
-    }
-    break;
+        // Infinite loop till something needs to be drawn in a loop
+        break;
+    // ------------------------------------
+    // ----------STATE: REFRESH------------
+    // ------------------------------------
     case State::REFRESH:
     {
         if (m_current_sub_text == nullptr)
@@ -35,9 +37,7 @@ void DisplayPlayer::update(unsigned long delta)
             return;
         }
 
-        Serial.println("REFRESH");
-        Serial.println(m_current_sub_text->text);
-
+        // In this state we draw the sub text in the predefined rect on the display
         m_tft.fillRect(m_current_sub_text->x, m_current_sub_text->y, m_current_sub_text->width, m_current_sub_text->height, ST7735_BLACK);
         m_tft.setCursor(m_current_sub_text->x, m_current_sub_text->y);
         m_tft.println(m_current_sub_text->text);
@@ -45,10 +45,13 @@ void DisplayPlayer::update(unsigned long delta)
         m_state = State::WAIT_FOR_REFRESH;
         m_micros = 0;
     }
-
     break;
+    // ------------------------------------
+    // -----STATE: WAITING FOR REFRESH-----
+    // ------------------------------------
     case State::WAIT_FOR_REFRESH:
     {
+        // Wait till we need to refresh the display
         if (m_micros > m_refresh_rate * 1000)
         {
             m_state = State::REFRESH;
@@ -58,39 +61,24 @@ void DisplayPlayer::update(unsigned long delta)
             m_micros += delta;
         }
     }
-
     break;
+    // ------------------------------------
+    // ----STATE: SCROLLING TEXT START-----
+    // ------------------------------------
     case State::SCROLLING_TEXT_START:
     {
+        // We set the row for the text to 0 and go to the next state
         m_current_row = 0;
         m_state = State::SCROLLING_TEXT;
     }
     break;
+    // ------------------------------------
+    // -------STATE: SCROLLING TEXT--------
+    // ------------------------------------
     case State::SCROLLING_TEXT:
     {
-        if (m_current_row < m_current_text->size)
-        {
-            // Serial.println("DRAW");
-            m_tft.fillScreen(ST7735_BLACK);
-
-            m_tft.setTextSize(m_current_text->text_size);
-
-            int space = (m_current_text->text_size == 2) ? 20 : 5;
-
-            for (int i = m_current_row; i < m_current_text->size; i++)
-            {
-                if (i - m_current_row >= 6)
-                {
-                    break;
-                }
-                m_tft.setCursor(0, 0 + space * (i - m_current_row));
-                m_tft.println(m_current_text->rows[i]);
-            }
-
-            m_current_row++;
-            m_state = State::WAIT_FOR_SCROLLING_TEXT;
-        }
-        else
+        // If we reached the end of the text we repeat the text or wait for the next text
+        if (m_current_row >= m_current_text->size)
         {
             if (m_loop_text)
             {
@@ -100,11 +88,36 @@ void DisplayPlayer::update(unsigned long delta)
             {
                 m_state = State::WAIT_FOR_START;
             }
+            return;
         }
+
+        // We draw up until the next 6 rows of the text
+        m_tft.fillScreen(ST7735_BLACK);
+        m_tft.setTextSize(m_current_text->text_size);
+
+        // determine the space between the rows
+        int space = (m_current_text->text_size == 2) ? 20 : 5;
+
+        for (int i = m_current_row; i < m_current_text->size; i++)
+        {
+            if (i - m_current_row >= 6)
+            {
+                break;
+            }
+            m_tft.setCursor(0, space * (i - m_current_row));
+            m_tft.println(m_current_text->rows[i]);
+        }
+
+        m_current_row++;
+        m_state = State::WAIT_FOR_SCROLLING_TEXT;
     }
     break;
+    // ------------------------------------
+    // ---STATE: WAIT FOR SCROLLING TEXT---
+    // ------------------------------------
     case State::WAIT_FOR_SCROLLING_TEXT:
     {
+        // Wait till we need to refresh the display
         if (m_micros > m_refresh_rate * 1000)
         {
             m_state = State::SCROLLING_TEXT;
@@ -125,6 +138,7 @@ void DisplayPlayer::draw_scrolling_text(DisplayPlayer::Text *text)
     m_current_text = text;
 }
 
+// draw the text immediatly on the display and set the state to wait for new text
 void DisplayPlayer::draw_text(DisplayPlayer::Text *text)
 {
     m_tft.fillScreen(ST7735_BLACK);
@@ -149,6 +163,7 @@ void DisplayPlayer::draw_text(DisplayPlayer::Text *text)
     m_state = State::WAIT_FOR_START;
 }
 
+// draw the fixed text for the distance puzzle on the display
 void DisplayPlayer::draw_distance_and_time(int distance, int duration)
 {
     m_state = State::WAIT_FOR_START;
@@ -160,12 +175,13 @@ void DisplayPlayer::draw_distance_and_time(int distance, int duration)
     String durationString = String(duration);
 
     m_tft.setCursor(0, 0);
-    m_tft.print("Distance: ");
+    m_tft.print("Distanz: ");
     m_tft.println(distanceString);
-    m_tft.print("Time: ");
+    m_tft.print("Zeit: ");
     m_tft.println(durationString);
 };
 
+// draw the changing sub text for the distance puzzle on the display
 void DisplayPlayer::draw_sub_text(SubText *text)
 {
     m_current_sub_text = text;
@@ -175,12 +191,14 @@ void DisplayPlayer::draw_sub_text(SubText *text)
     }
 };
 
+// draw the given instructions immediatly on the display
 void DisplayPlayer::drawImmediate(DisplayUpdateMethod updateMethod)
 {
     m_state = State::WAIT_FOR_START;
     updateMethod(&m_tft);
 }
 
+// draw the clock for the clock puzzle immediatly on the display
 void DisplayPlayer::draw_clock(int hour, int minute)
 {
     m_state = State::WAIT_FOR_START;
