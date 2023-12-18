@@ -1,10 +1,15 @@
 #include "GameEasy.h"
 
-GameEasy::GameEasy(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer)
+GameEasy::GameEasy(
+    SoundPlayer *soundPlayer,
+    DistancePlayer *distancePlayer,
+    DisplayPlayer *displayPlayer,
+    TouchPlayer *touchplayer,
+    RotatePlayer *rotatePlayer,
+    KeyPlayer *keyPlayer,
+    TiltPlayer *tiltPlayer)
     : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer, tiltPlayer, 4, 4, 5)
 {
-    Serial.println("GameEasy");
-
     // Tilt
     generate_tilt_sequence();
 
@@ -36,6 +41,7 @@ void GameEasy::generate_clock_values()
 
 void GameEasy::generate_rotate_values(int leftSegment, int rightSegment)
 {
+    // Generate a random segment that is not the current left or right segment
     do
     {
         m_rotate_segment = random(0, 8);
@@ -44,38 +50,39 @@ void GameEasy::generate_rotate_values(int leftSegment, int rightSegment)
 
 void GameEasy::play_clock_melody(int hour, int minute)
 {
-    if (this->m_sound_player->isEmpty())
+    if (!m_sound_player->isEmpty())
     {
-        int melody[13] = {};
-        int durations[13] = {};
-        for (int i = 0; i < m_hour; i++)
-        {
-            melody[i] = NOTE_C2;
-            durations[i] = 4;
-        }
-        melody[m_hour] = 0;
-        durations[m_hour] = 1;
-
-        this->m_sound_player->playSound(melody, durations, m_hour + 1);
+        return;
     }
+
+    // Play as many notes as the hour is
+    int melody[13] = {};
+    int durations[13] = {};
+    for (int i = 0; i < m_hour; i++)
+    {
+        melody[i] = NOTE_C2;
+        durations[i] = 4;
+    }
+    melody[m_hour] = 0;
+    durations[m_hour] = 1;
+
+    m_sound_player->playSound(melody, durations, m_hour + 1);
 }
 
 bool GameEasy::check_clock_time(int hour, int minute)
 {
+    // The hour must be correct and the minute must be within the first 15 minutes (first 3 segments);
     return hour == m_hour && (minute / 3) == 0;
 }
 
 bool GameEasy::check_rotate(int leftSegment, int rightSegment)
 {
+    // The left or right segment must be in the right segment to hear the sound for the keypad puzzle
     return leftSegment == m_rotate_segment || rightSegment == m_rotate_segment;
 }
 
 bool GameEasy::check_distance(int distance)
 {
-    Serial.print("CHECK: distance: ");
-    Serial.print(distance);
-    Serial.print(" ");
-    Serial.println(m_distance);
-
+    // The distance must be within 1 of the correct distance
     return distance >= m_distance - 1 && distance <= m_distance + 1;
 }
