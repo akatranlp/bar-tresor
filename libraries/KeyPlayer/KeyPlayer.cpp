@@ -1,7 +1,5 @@
 #include "KeyPlayer.h"
 
-static int keyToNoteMap(char key);
-
 KeyPlayer::KeyPlayer(SoundPlayer *soundPlayer, const char keys[4][3], byte row_pins[4], byte col_pins[3], int rows, int cols)
     : m_keypad(Keypad(makeKeymap(keys), row_pins, col_pins, rows, cols)), m_sound_player(soundPlayer)
 {
@@ -23,7 +21,7 @@ void KeyPlayer::update()
     char key = m_keypad.getKey();
     if (key != NO_KEY)
     {
-        int keyNotes[] = {keyToNoteMap(key), 0};
+        int keyNotes[] = {map_key_to_note(key), 0};
         int keyNoteDurations[] = {4, 1};
         m_sound_player->playSound(keyNotes, keyNoteDurations, 2);
         m_last_key = key;
@@ -31,7 +29,7 @@ void KeyPlayer::update()
     }
 }
 
-static int keyToNoteMap(char key)
+int map_key_to_note(char key)
 {
     switch (key)
     {

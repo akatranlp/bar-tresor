@@ -4,6 +4,8 @@
 
 #pragma once
 
+int map_key_to_note(char key);
+
 class KeyPlayer
 {
 public:

@@ -7,44 +7,22 @@ class GameHard : public Game
 public:
     GameHard(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer);
 
-    virtual bool update(unsigned long delta, int distance) override;
+protected:
+    // In update functions
+    virtual void play_clock_melody(int hour, int minute) override;
+    virtual bool check_clock_time(int hour, int minute) override;
+    virtual bool check_rotate(int leftSegment, int rightSegment) override;
+    virtual bool check_distance(int distance) override;
 
 private:
-    enum class State
-    {
-        CLOCK,
-        START_TILT,
-        TILT,
-        NO_TILT,
-        START_DISTANCE,
-        WAIT_DISTANCE,
-        ROTATE,
-        KEY_INPUT,
-        START_TOUCH,
-        TOUCH,
-        FAIL_TOUCH,
-        END,
-    };
-
-    unsigned long m_micros;
+    // generate Values functions
+    void generate_tilt_sequence();
+    void generate_clock_values();
+    void generate_rotate_values(int leftSegment, int rightSegment);
 
     int m_hour;
     int m_minute;
 
-    int m_distance;
-    int m_duration;
-
-    int m_left_segment;
-    int m_right_segment;
     int m_left_rotate_segment;
     int m_right_rotate_segment;
-
-    int m_keyIndex = 0;
-    int m_tilt_index = 0;
-    TiltPlayer::Tilt m_last_tilt_input = TiltPlayer::Tilt::None;
-
-    int m_current_touch_index = 0;
-    TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
-
-    State m_state = State::CLOCK;
 };
