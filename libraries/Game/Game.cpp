@@ -71,7 +71,7 @@ static const char *rotate_text_rows[] = {
     "helfen dir",
     "dabei die",
     "Kombination",
-    "zum oeffnen",
+    "zum Oeffnen",
     "des Tresors",
     "herauszufinden.",
 };
