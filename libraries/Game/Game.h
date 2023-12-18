@@ -1,3 +1,8 @@
+/* *******************************************************
+ *  Game.h
+ *  This library is used to give you a number of puzzles
+ *  to solve in order to open the vault
+ ********************************************************/
 #include <TouchPlayer.h>
 #include <KeyPlayer.h>
 #include <TiltPlayer.h>
@@ -11,12 +16,21 @@
 class Game
 {
 public:
-    Game(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer, int tilt_sequence_size, int touch_sequence_size, int distance_text_lenght);
+    Game(SoundPlayer *soundPlayer,
+         DistancePlayer *distancePlayer,
+         DisplayPlayer *displayPlayer,
+         TouchPlayer *touchplayer,
+         RotatePlayer *rotatePlayer,
+         KeyPlayer *keyPlayer,
+         TiltPlayer *tiltPlayer,
+         int tilt_sequence_size,
+         int touch_sequence_size,
+         int distance_text_lenght);
 
     bool update(unsigned long delta, int distance);
 
 protected:
-    // In update functions
+    // In update functions which are implemented by the child classes
     virtual void play_clock_melody(int hour, int minute) = 0;
     virtual bool check_clock_time(int hour, int minute) = 0;
     virtual bool check_rotate(int leftSegment, int rightSegment) = 0;
@@ -50,6 +64,7 @@ private:
     void generate_touch_sequence();
     void generate_key_sequence();
 
+    // Game state machine
     enum class State
     {
         INIT_TOUCH,
@@ -95,6 +110,6 @@ private:
     int m_touch_sequence_size;
     TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
 
-    // Distance
+    // This is used to specify the length of the distance text for each subclass
     int m_distance_text_lenght;
 };
