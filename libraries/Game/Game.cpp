@@ -85,6 +85,78 @@ bool Game::update(unsigned long delta, int distance)
 {
     switch (m_state)
     {
+    case State::START_TOUCH:
+    {
+        Serial.println("START_TOUCH");
+        m_state = State::TOUCH;
+        m_current_touch_index = 0;
+        m_last_touch_input = TouchPlayer::Touch::None;
+    }
+    break;
+    case State::TOUCH:
+    {
+        u8 touch = this->m_touch_player->getTouchInput();
+
+        int touch_count = 0;
+        if (touch & TOUCH_UP)
+        {
+            touch_count++;
+        }
+        if (touch & TOUCH_BACK)
+        {
+            touch_count++;
+        }
+        if (touch & TOUCH_LEFT)
+        {
+            touch_count++;
+        }
+        if (touch & TOUCH_RIGHT)
+        {
+            touch_count++;
+        }
+
+        if (touch_count > 1)
+        {
+            m_state = State::FAIL_TOUCH;
+        }
+        else
+        {
+            if (touch_count == 0)
+            {
+                return false;
+            }
+
+            if ((touch & static_cast<u8>(m_last_touch_input)) == 0)
+            {
+                if ((touch & static_cast<u8>(m_touch_sequence[m_current_touch_index])) != 0)
+                {
+                    m_last_touch_input = m_touch_sequence[m_current_touch_index];
+                    m_current_touch_index++;
+                    m_sound_player->playCorrectSound();
+                    if (m_current_touch_index > m_touch_sequence_size - 1)
+                    {
+                        // TODO: Next Stage
+                        m_sound_player->playSuccessSound();
+                        m_state = State::CLOCK;
+                    }
+                }
+                else
+                {
+                    m_state = State::FAIL_TOUCH;
+                }
+            }
+        }
+    }
+    break;
+    case State::FAIL_TOUCH:
+    {
+        if (m_sound_player->isEmpty())
+        {
+            m_sound_player->playFailSound();
+        }
+        m_state = State::START_TOUCH;
+    }
+    break;
     case State::CLOCK:
     {
         auto segment = this->m_rotate_player->getSegments(1024 / 12);
@@ -98,6 +170,7 @@ bool Game::update(unsigned long delta, int distance)
 
         if (check_clock_time(hour, minute))
         {
+            // TODO: Next Stage
             m_sound_player->playSuccessSound();
             m_state = State::START_TILT;
         }
@@ -229,8 +302,9 @@ bool Game::update(unsigned long delta, int distance)
                 m_current_rotate_key_index++;
                 if (m_current_rotate_key_index > 3)
                 {
+                    // TODO: Next Stage
                     m_sound_player->playSuccessSound();
-                    m_state = State::START_TOUCH;
+                    m_state = State::END;
                 }
             }
             else
@@ -241,76 +315,7 @@ bool Game::update(unsigned long delta, int distance)
         }
     }
     break;
-    case State::START_TOUCH:
-    {
-        Serial.println("START_TOUCH");
-        m_state = State::TOUCH;
-        m_current_touch_index = 0;
-        m_last_touch_input = TouchPlayer::Touch::None;
-    }
-    break;
-    case State::TOUCH:
-    {
-        u8 touch = this->m_touch_player->getTouchInput();
 
-        int touch_count = 0;
-        if (touch & TOUCH_UP)
-        {
-            touch_count++;
-        }
-        if (touch & TOUCH_BACK)
-        {
-            touch_count++;
-        }
-        if (touch & TOUCH_LEFT)
-        {
-            touch_count++;
-        }
-        if (touch & TOUCH_RIGHT)
-        {
-            touch_count++;
-        }
-
-        if (touch_count > 1)
-        {
-            m_state = State::FAIL_TOUCH;
-        }
-        else
-        {
-            if (touch_count == 0)
-            {
-                return false;
-            }
-
-            if ((touch & static_cast<u8>(m_last_touch_input)) == 0)
-            {
-                if ((touch & static_cast<u8>(m_touch_sequence[m_current_touch_index])) != 0)
-                {
-                    m_last_touch_input = m_touch_sequence[m_current_touch_index];
-                    m_current_touch_index++;
-                    m_sound_player->playCorrectSound();
-                    if (m_current_touch_index > m_touch_sequence_size - 1)
-                    {
-                        m_state = State::END;
-                    }
-                }
-                else
-                {
-                    m_state = State::FAIL_TOUCH;
-                }
-            }
-        }
-    }
-    break;
-    case State::FAIL_TOUCH:
-    {
-        if (m_sound_player->isEmpty())
-        {
-            m_sound_player->playFailSound();
-        }
-        m_state = State::START_TOUCH;
-    }
-    break;
     case State::END:
     {
         Serial.println("END");

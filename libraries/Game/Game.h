@@ -50,25 +50,24 @@ private:
     void generate_touch_sequence();
     void generate_key_sequence();
 
-    // reihgenfolge
-    // 1. Touchi
-    // 2. Clock
-    // 3. Tilt
-    // 4. Distance
-    // 5. Keypad
     enum class State
     {
-        CLOCK,
-        START_TILT,
-        TILT,
-        NO_TILT,
-        START_DISTANCE,
-        WAIT_DISTANCE,
-        ROTATE,
-        KEY_INPUT,
         START_TOUCH,
         TOUCH,
         FAIL_TOUCH,
+
+        CLOCK,
+
+        START_TILT,
+        TILT,
+        NO_TILT,
+
+        START_DISTANCE,
+        WAIT_DISTANCE,
+
+        ROTATE,
+        KEY_INPUT,
+
         END,
     };
 
