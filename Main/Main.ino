@@ -1,8 +1,16 @@
 #include <SPI.h>
 #include <Wire.h>
-#include <MFRC522.h>
 #include <Stepper.h>
 #include <Keypad.h>
+
+// #include <MFRC522.h>
+/* #include <MFRC522v2.h>
+#include <MFRC522DriverPinSimple.h>
+#include <MFRC522DriverSPI.h>
+#include <MFRC522DriverI2C.h>
+#include <MFRC522Debug.h> */
+
+#include <rfid1.h>
 
 #include <DistancePlayer.h>
 #include <DisplayPlayer.h>
@@ -24,14 +32,46 @@ unsigned long last_time = 0;
 
 // ------------------------------------
 // ----------RFID----------------------
-#define RFID_SS_PIN 53
+#define RFID_IRQ_PIN 27
+#define RFID_SCK_PIN 22
+#define RFID_MOSI_PIN 25
+#define RFID_MISO_PIN 24
+#define RFID_SDA_PIN 23
 #define RFID_RST_PIN 5
-MFRC522 rfid(RFID_SS_PIN, RFID_RST_PIN);
+RFID1 rfid;
 
-byte managementUID[10] = {0x8C, 0x35, 0xD7, 0xCD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-byte card1UID[10] = {0x63, 0xB0, 0x43, 0xF6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-byte card2UID[10] = {0x03, 0x05, 0x17, 0xF6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-byte card3UID[10] = {0x23, 0x84, 0x1E, 0xF6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uchar managementUID[4] = {0x8C, 0x35, 0xD7, 0xCD};
+uchar card1UID[4] = {0x63, 0xB0, 0x43, 0xF6};
+uchar card2UID[4] = {0x03, 0x05, 0x17, 0xF6};
+uchar card3UID[4] = {0x23, 0x84, 0x1E, 0xF6};
+
+uchar serNum[5];
+
+const char *card_text_rows[] = {
+    "Bitte",
+    "stecke eine",
+    "Karte ein!",
+};
+
+static DisplayPlayer::Text card_text = DisplayPlayer::Text{
+  rows : card_text_rows,
+  size : 3,
+  text_size : 2,
+};
+
+const char *management_text_rows[] = {
+    "Der Tresor",
+    "wurde durch",
+    "einen",
+    "Mitarbeiter",
+    "geoeffnet.",
+};
+
+static DisplayPlayer::Text management_text = DisplayPlayer::Text{
+  rows : management_text_rows,
+  size : 5,
+  text_size : 2,
+};
 
 // ------------------------------------
 // ----------DISTANCE------------------
@@ -44,16 +84,22 @@ DistancePlayer distancePlayer(DISTANCE_ECHO_PIN, DISTANCE_TRIGGER_PIN);
 #define PIEZO_PIN 11
 SoundPlayer soundPlayer(PIEZO_PIN);
 
+const int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4};
+const int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
+const int melody_size = sizeof(melody) / sizeof(melody[0]);
+
 // ------------------------------------
 // ----------DISPLAY-------------------
 #define TFT_CS 10
 #define TFT_RST 8
 #define TFT_DC 9
+#define TFT_MOSI 28
+#define TFT_SCLK 29
 DisplayPlayer displayPlayer(TFT_CS, TFT_DC, TFT_RST);
 
 // ------------------------------------
 // ------------TOUCH-------------------
-#define TOUCH_PIN_TOP 31
+#define TOUCH_PIN_TOP 32
 #define TOUCH_PIN_LEFT 4
 #define TOUCH_PIN_RIGHT 7
 #define TOUCH_PIN_BACK 30
@@ -73,16 +119,8 @@ RotatePlayer rotatePlayer(ROTATE_PIN_LEFT, ROTATE_PIN_RIGHT);
 // initialize the stepper library on pins 34 through 40:
 Stepper stepper(SPR, 34, 38, 36, 40);
 
-// ------------------------------------
-// --------------Sound-----------------
-
-const int melody[] = {NOTE_C4, NOTE_G3, NOTE_G3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4};
-const int noteDurations[] = {4, 8, 8, 4, 4, 4, 4, 4};
-const int melody_size = sizeof(melody) / sizeof(melody[0]);
-
 //--------------------------------------
 //-----------Keypad---------------------
-
 #define ROWS 4 // four rows
 #define COLS 3 // three columns
 const char keys[ROWS][COLS] = {
@@ -101,35 +139,63 @@ KeyPlayer keyPlayer(&soundPlayer, keys, rowPins, colPins, ROWS, COLS);
 #define MPU_ADDR 0x68
 TiltPlayer tiltPlayer(MPU_ADDR);
 
-const int MPU_addr = 0x68; // I2C address of the MPU-6050
-int16_t AcX, AcY, AcZ, Tmp, GyX, GyY, GyZ;
+// ------------------------------------
+// --------------GAME------------------
+Game *game;
+enum class State
+{
+  STARTUP,
+  WAIT_FOR_RFID,
+  START_GAME,
+  GAME,
+  GAME_WON,
+  MANAGEMENT_OPEN,
+  FINISH,
+};
+State state = State::WAIT_FOR_RFID;
+unsigned long m_micros = 0;
 
 void setup()
 {
-  randomSeed(analogRead(A2));
+  Serial.begin(115200);
+
+  randomSeed(analogRead(A2) * analogRead(A3) * analogRead(A4) * analogRead(A5));
+
+  touchPlayer.begin();
+
   Wire.begin();
   tiltPlayer.begin();
 
-  Serial.begin(115200);
+  rfid.begin(RFID_IRQ_PIN, RFID_SCK_PIN, RFID_MOSI_PIN, RFID_MISO_PIN, RFID_SDA_PIN, RFID_RST_PIN);
+  delay(100);
+  rfid.init();
 
-  pinMode(TOUCH_PIN_RIGHT, INPUT);
-  pinMode(TOUCH_PIN_LEFT, INPUT);
-  pinMode(TOUCH_PIN_TOP, INPUT);
-  pinMode(TOUCH_PIN_BACK, INPUT);
+  // TODO: already in constructor of touchplayer ! Check if begin function is needed
+  // pinMode(TOUCH_PIN_RIGHT, INPUT);
+  // pinMode(TOUCH_PIN_LEFT, INPUT);
+  // pinMode(TOUCH_PIN_TOP, INPUT);
+  // pinMode(TOUCH_PIN_BACK, INPUT);
 
-  SPI.begin();
-  rfid.PCD_Init();
-  Serial.println("Starting...");
+  // pinMode(RFID_SS_PIN, OUTPUT);
+  // pinMode(TFT_CS, OUTPUT);
 
   displayPlayer.begin();
+
+  // SPI.begin();
+
+  // rfid.PCD_Init(); // Init MFRC522 board.
+
+  Serial.println("Starting...");
   displayPlayer.drawImmediate(drawHelloWorld);
 
-  // stepper.setSpeed(RPM);
-  // closeVault();
+  stepper.setSpeed(RPM);
+  closeVault();
 
   int beep_sound[] = {NOTE_C7};
   int beep_duration[] = {8};
   soundPlayer.playSound(beep_sound, beep_duration, 1);
+  displayPlayer.draw_text(&card_text);
+
   last_time = micros();
 }
 
@@ -177,104 +243,68 @@ void drawHelloWorld(Adafruit_ST7735 *tft)
 
 int getCardId()
 {
-  if (!rfid.PICC_IsNewCardPresent())
+  uchar status;
+  uchar str[MAX_LEN];
+  status = rfid.request(PICC_REQIDL, str);
+
+  if (status != MI_OK)
   {
+    // Serial.println("No card detected");
     return -1;
   }
 
-  if (!rfid.PICC_ReadCardSerial())
+  // rfid.showCardType(str);
+  status = rfid.anticoll(str);
+
+  if (status != MI_OK)
   {
+    // Serial.println("Something went wrong");
     return -1;
   }
 
-  int cardId = 0;
-  for (byte i = 0; i < rfid.uid.size; i++)
-  {
-    byte cardByte = rfid.uid.uidByte[i];
-    byte otherCardByte = managementUID[i];
-    if (cardByte != otherCardByte)
-    {
-      cardId = -1;
-      break;
-    }
-  }
-  if (cardId == 0)
+  memcpy(serNum, str, 5);
+  // rfid.showCardID(serNum);
+
+  uchar *id = str;
+
+  if (id[0] == managementUID[0] && id[1] == managementUID[1] && id[2] == managementUID[2] && id[3] == managementUID[3])
   {
     return 0;
   }
-  cardId = 1;
-  for (byte i = 0; i < rfid.uid.size; i++)
-  {
-    byte cardByte = rfid.uid.uidByte[i];
-    byte otherCardByte = card1UID[i];
-    if (cardByte != otherCardByte)
-    {
-      cardId = -1;
-      break;
-    }
-  }
-  if (cardId == 1)
+  else if (id[0] == card1UID[0] && id[1] == card1UID[1] && id[2] == card1UID[2] && id[3] == card1UID[3])
   {
     return 1;
   }
-  cardId = 2;
-  for (byte i = 0; i < rfid.uid.size; i++)
-  {
-    byte cardByte = rfid.uid.uidByte[i];
-    byte otherCardByte = card2UID[i];
-    if (cardByte != otherCardByte)
-    {
-      cardId = -1;
-      break;
-    }
-  }
-  if (cardId == 2)
+  else if (id[0] == card2UID[0] && id[1] == card2UID[1] && id[2] == card2UID[2] && id[3] == card2UID[3])
   {
     return 2;
   }
-  cardId = 3;
-  for (byte i = 0; i < rfid.uid.size; i++)
+  else if (id[0] == card3UID[0] && id[1] == card3UID[1] && id[2] == card3UID[2] && id[3] == card3UID[3])
   {
-    byte cardByte = rfid.uid.uidByte[i];
-    byte otherCardByte = card3UID[i];
-    if (cardByte != otherCardByte)
-    {
-      cardId = -1;
-      break;
-    }
+    return 3;
   }
-  return cardId;
+  else
+  {
+    return -1;
+  }
 }
-
-enum class State
-{
-  STARTUP,
-  WAIT_FOR_RFID,
-  START_GAME,
-  GAME,
-  GAME_WON,
-  MANAGEMENT_OPEN,
-  FINISH,
-};
-
-volatile State state = State::WAIT_FOR_RFID;
-
-int gameId = -1;
-Game *game;
 
 void drawGame(Adafruit_ST7735 *tft)
 {
+  tft->fillScreen(ST7735_BLACK);
   tft->drawLine(0, 0, 100, 100, ST7735_WHITE);
 }
 
 void drawManagementFinish(Adafruit_ST7735 *tft)
 {
-  tft->drawLine(0, 0, 100, 100, ST7735_WHITE);
+  tft->fillScreen(ST7735_BLACK);
+  tft->drawLine(0, 0, 100, 100, ST7735_CYAN);
 }
 
 void drawWon(Adafruit_ST7735 *tft)
 {
-  tft->drawLine(0, 0, 100, 100, ST7735_WHITE);
+  tft->fillScreen(ST7735_BLACK);
+  tft->drawLine(0, 0, 100, 100, ST7735_ORANGE);
 }
 
 void loop()
@@ -282,6 +312,7 @@ void loop()
   unsigned long time = micros();
   unsigned long delta = time - last_time;
   last_time = time;
+
   soundPlayer.update(delta);
   displayPlayer.update(delta);
   int distance = distancePlayer.update(delta);
@@ -318,9 +349,6 @@ void loop()
         {
           game = new GameHard(&soundPlayer, &distancePlayer, &displayPlayer, &touchPlayer, &rotatePlayer, &keyPlayer, &tiltPlayer);
         }
-
-        Serial.println("Start Game");
-        gameId = cardId;
         state = State::START_GAME;
       }
     }
@@ -331,17 +359,26 @@ void loop()
     Serial.println("Start Game");
     state = State::GAME;
     soundPlayer.playSound(melody, noteDurations, melody_size);
-    displayPlayer.drawImmediate(drawGame);
   }
   break;
   case State::GAME:
   {
-    int cardId = getCardId();
-    if (cardId == 0)
+    if (m_micros > 1000 * 1000)
     {
-      state = State::MANAGEMENT_OPEN;
+      int cardId = -1; // getCardId();
+      if (cardId == 0)
+      {
+        state = State::MANAGEMENT_OPEN;
+        return;
+      }
+      m_micros = 0;
     }
-    else if (game->update(delta, distance))
+    else
+    {
+      m_micros += delta;
+    }
+
+    if (game->update(delta, distance))
     {
       state = State::GAME_WON;
     }
@@ -349,18 +386,17 @@ void loop()
   break;
   case State::GAME_WON:
   {
-    // openVault();
+    openVault();
     soundPlayer.playSound(melody, noteDurations, melody_size);
-    displayPlayer.drawImmediate(drawWon);
     state = State::FINISH;
   }
   break;
   case State::MANAGEMENT_OPEN:
   {
     Serial.println("MANAGEMENT_OPEN");
-    // openVault();
-    soundPlayer.playSound(melody, noteDurations, melody_size);
-    displayPlayer.drawImmediate(drawManagementFinish);
+    openVault();
+    // soundPlayer.playSound(melody, noteDurations, melody_size);
+    displayPlayer.draw_text(&management_text);
     state = State::FINISH;
   }
   break;
@@ -370,10 +406,4 @@ void loop()
   }
   break;
   }
-
-  /* Serial.print(time);
-  Serial.print(" - ");
-  Serial.print(last_time);
-  Serial.print(" = ");
-  Serial.println(delta); */
 }

@@ -1,7 +1,7 @@
 #include "GameEasy.h"
 
 GameEasy::GameEasy(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer)
-    : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer, tiltPlayer, 4, 4)
+    : Game(soundPlayer, distancePlayer, displayPlayer, touchplayer, rotatePlayer, keyPlayer, tiltPlayer, 4, 4, 5)
 {
     Serial.println("GameEasy");
 
@@ -72,5 +72,10 @@ bool GameEasy::check_rotate(int leftSegment, int rightSegment)
 
 bool GameEasy::check_distance(int distance)
 {
+    Serial.print("CHECK: distance: ");
+    Serial.print(distance);
+    Serial.print(" ");
+    Serial.println(m_distance);
+
     return distance >= m_distance - 1 && distance <= m_distance + 1;
 }

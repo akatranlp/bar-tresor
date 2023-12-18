@@ -5,7 +5,13 @@
 class GameEasy final : public Game
 {
 public:
-    GameEasy(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer);
+    GameEasy(SoundPlayer *soundPlayer,
+             DistancePlayer *distancePlayer,
+             DisplayPlayer *displayPlayer,
+             TouchPlayer *touchplayer,
+             RotatePlayer *rotatePlayer,
+             KeyPlayer *keyPlayer,
+             TiltPlayer *tiltPlayer);
 
 protected:
     // In update functions

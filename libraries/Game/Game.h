@@ -11,7 +11,7 @@
 class Game
 {
 public:
-    Game(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer, int tilt_sequence_size, int touch_sequence_size);
+    Game(SoundPlayer *soundPlayer, DistancePlayer *distancePlayer, DisplayPlayer *displayPlayer, TouchPlayer *touchplayer, RotatePlayer *rotatePlayer, KeyPlayer *keyPlayer, TiltPlayer *tiltPlayer, int tilt_sequence_size, int touch_sequence_size, int distance_text_lenght);
 
     bool update(unsigned long delta, int distance);
 
@@ -52,6 +52,7 @@ private:
 
     enum class State
     {
+        INIT_TOUCH,
         START_TOUCH,
         TOUCH,
         FAIL_TOUCH,
@@ -62,16 +63,19 @@ private:
         TILT,
         NO_TILT,
 
+        INIT_DISTANCE,
+        WAIT_FOR_DISTANCE_TEXT,
         START_DISTANCE,
         WAIT_DISTANCE,
 
+        INIT_ROTATE,
         ROTATE,
         KEY_INPUT,
 
         END,
     };
 
-    State m_state = State::CLOCK;
+    State m_state = State::INIT_TOUCH;
 
     // Base
     unsigned long m_micros;
@@ -89,4 +93,7 @@ private:
     int m_current_touch_index = 0;
     int m_touch_sequence_size;
     TouchPlayer::Touch m_last_touch_input = TouchPlayer::Touch::None;
+
+    // Distance
+    int m_distance_text_lenght;
 };

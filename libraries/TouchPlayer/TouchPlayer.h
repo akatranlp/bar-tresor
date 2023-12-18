@@ -22,6 +22,8 @@ public:
 
     TouchPlayer(int up_pin, int back_pin, int left_pin, int right_pin);
 
+    void begin();
+
     u8 getTouchInput();
 
 private:
