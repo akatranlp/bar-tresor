@@ -4,6 +4,5 @@
   "sketch": "Main/Main.ino",
   "port": "/dev/ttyUSB0",
   "output": "output",
-  "include": "Libraries",
-  "prebuild": "powershell ./prebuild.ps1"
+  "prebuild": "bash ./prebuild.sh"
 }
