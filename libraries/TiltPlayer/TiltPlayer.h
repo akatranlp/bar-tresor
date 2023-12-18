@@ -1,3 +1,8 @@
+/* *******************************************************
+ *  TiltPlayer.h
+ *  This library is used to get the Tilt of the Box with
+ *  the MPU6050 / GY-521
+ ********************************************************/
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -17,8 +22,10 @@ public:
 
     TiltPlayer(uint8_t address);
 
+    // Initialize the MPU6050
     void begin();
 
+    // Get the current tilt of the box
     Tilt getTilt();
 
 private:

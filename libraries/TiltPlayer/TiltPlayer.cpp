@@ -1,4 +1,6 @@
 #include "TiltPlayer.h"
+// How to get the values from the MPU6050 is based on this tutorial:
+// https://projecthub.arduino.cc/Nicholas_N/how-to-use-the-accelerometer-gyroscope-gy-521-647e65
 
 TiltPlayer::TiltPlayer(uint8_t address)
     : m_address(address) {}
@@ -12,6 +14,7 @@ void TiltPlayer::begin()
 }
 
 TiltPlayer::Tilt TiltPlayer::getTilt()
+
 {
     Wire.beginTransmission(m_address);
     Wire.write(0x3B); // starting with register 0x3B (ACCEL_XOUT_H)
@@ -21,43 +24,32 @@ TiltPlayer::Tilt TiltPlayer::getTilt()
     int AcY = Wire.read() << 8 | Wire.read();                // 0x3D (ACCEL_YOUT_H) & 0x3E (ACCEL_YOUT_L)
     int AcZ = Wire.read() << 8 | Wire.read();                // 0x3F (ACCEL_ZOUT_H) & 0x40 (ACCEL_ZOUT_L)
 
-    /* Serial.print("Tilt: ");
-    Serial.print(AcX);
-    Serial.print(" ");
-    Serial.print(AcY);
-    Serial.print(" ");
-    Serial.println(AcZ); */
-
+    // The following values were analyzed by printing the values of AcX, AcY and AcZ
+    // Whith these values we can quite good determine the tilt of the box
     if (AcY > 2500 || AcY < -2500)
     {
-        // Serial.println("Tilt: None");
         return Tilt::None;
     }
 
     if (AcX < 18000 && AcX > 14000)
     {
-        // Serial.println("Tilt: Left");
         return Tilt::Left;
     }
 
     if (AcX > -18000 && AcX < -14000)
     {
-        // Serial.println("Tilt: Right");
         return Tilt::Right;
     }
 
     if (AcZ < 18000 && AcZ > 14000)
     {
-        // Serial.println("Tilt: Forward");
         return Tilt::Forward;
     }
 
     if (AcZ > -18000 && AcZ < -14000)
     {
-        // Serial.println("Tilt: Backward");
         return Tilt::Backward;
     }
 
-    // Serial.println("Tilt: None");
     return Tilt::None;
 }
