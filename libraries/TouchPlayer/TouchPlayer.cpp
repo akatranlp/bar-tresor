@@ -13,6 +13,8 @@ void TouchPlayer::begin()
     pinMode(m_right_pin, INPUT);
 }
 
+// Read the input of the touch sensors
+// the inputs are stored in one value
 u8 TouchPlayer::getTouchInput()
 {
     u8 touch = 0;
