@@ -4,12 +4,12 @@
 // extern libraries
 #include <Stepper.h>
 #include <rfid1.h>
+#include <pitches.h>
 
 // intern libraries
 #include <DistancePlayer.h>
 #include <DisplayPlayer.h>
 #include <RotatePlayer.h>
-#include <pitches.h>
 #include <SoundPlayer.h>
 #include <TiltPlayer.h>
 #include <KeyPlayer.h>
